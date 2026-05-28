@@ -1,5 +1,9 @@
 # Prometheus Roadmap
 
+This document explains how the project should move from idea to prototype to decision.
+
+It assumes the research direction has already been described in [PLAN.md](PLAN.md). In plain language, this roadmap is the execution checklist for testing the plan under a constrained first-pass budget.
+
 ## Pre-Flight User Setup
 
 This section exists to remove execution friction before any meaningful engineering work begins. For the $5k plan, the fastest path is to frontload account setup, spending controls, access, and public-data readiness.
@@ -74,6 +78,16 @@ Credentials, API keys, service-account keys, and banking details should not be w
 
 Do not begin implementation until cloud access, billing, and credential handling are confirmed.
 
+## Terms Used in This Roadmap
+
+1. Baseline: the standard reference model against which all experimental variants are compared
+2. Variant: an experimental version of the model that changes one or more architectural features
+3. Pilot run: a short, inexpensive run used to confirm that code, training, and evaluation work before spending more money
+4. Benchmark suite: the set of tasks and measurements used to compare baseline and variants
+5. Ablation: a controlled comparison where one feature is removed to see whether it really matters
+6. Decision gate: a point where the project should stop and explicitly decide whether to continue
+7. User-dependent progress: steps that cannot proceed without user approval, access, or funding decisions
+
 ## High-Level Step Tree
 
 ### 0. Remove execution friction
@@ -121,11 +135,15 @@ This is not a roadmap for building a frontier model immediately. It is a roadmap
 
 For the $5k plan, the first source of failure is usually not model design. It is operational friction. This roadmap therefore starts by eliminating user-side blockers before engineering work begins.
 
+The second source of failure is uncontrolled scope growth. The roadmap is intentionally staged so that the project can stop early if the signal is weak.
+
 ## 1. Define the First-Pass Experiment
 
 ### Goal
 
 Turn the current research thesis into a narrow experiment that can fail clearly.
+
+This phase exists so the project knows exactly what it is trying to prove before code and cloud spending accelerate.
 
 ### Actionable Steps
 
@@ -150,6 +168,8 @@ Produce a one-page experiment brief with:
 6. Budget cap
 7. Go or no-go thresholds
 
+If this output does not exist, later implementation work is much more likely to drift.
+
 ### User-Dependent Progress
 
 Progress depends on the user for:
@@ -167,6 +187,8 @@ Do not move forward until the first-pass claim is short enough to fit in two sen
 ### Goal
 
 Create a minimal, reproducible training and evaluation environment that makes later comparisons trustworthy.
+
+This is the engineering foundation. Its job is to make later experimental results believable.
 
 ### Actionable Steps
 
@@ -230,6 +252,8 @@ If the baseline itself is unstable or too expensive, stop and reduce scope befor
 
 Test the ideas most central to Prometheus without introducing too many moving parts at once.
 
+This phase should be conservative. The purpose is not to express every idea in the plan. The purpose is to test the smallest set of ideas that can produce a meaningful signal.
+
 ### Variant Tree
 
 1. Variant A: Hierarchical modular structure without sparse communication
@@ -269,6 +293,8 @@ If a variant cannot be explained simply, it is too complex for the first pass.
 
 Measure whether the variants actually improve the properties the project cares about.
 
+This phase answers a simple question: if a model variant looks better, better at what exactly?
+
 ### Actionable Steps
 
 1. Choose a language-modeling benchmark.
@@ -299,6 +325,8 @@ If the benchmark suite does not directly test the core hypothesis, cut it.
 ### Goal
 
 Generate the first real evidence for or against the architecture.
+
+This is the point where narrative should give way to measured results.
 
 ### Actionable Steps
 
@@ -332,6 +360,8 @@ Do not rely on intuition after this point. Continue only if the numbers justify 
 
 Prevent the project from drifting into a bundle of loosely related ideas.
 
+This phase matters because research projects often fail by refusing to simplify after the first round of evidence.
+
 ### Actionable Steps
 
 1. Rank variants by signal strength.
@@ -360,6 +390,8 @@ If the project cannot name the strongest mechanism, it is not ready to scale.
 ### Goal
 
 Decide whether Prometheus has earned more money, more time, and more complexity.
+
+This is a formal decision phase, not just a summary. The project should either earn another round or deliberately stop, simplify, or pivot.
 
 ### Actionable Steps
 

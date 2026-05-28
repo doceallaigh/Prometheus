@@ -1,8 +1,14 @@
 # Prometheus Research Plan
 
+This document explains what Prometheus is trying to test, why the project believes the idea is worth testing, and what would count as success or failure.
+
+It is written to be understandable on its own, but it is most useful when read after [README.md](README.md) and before [ROADMAP.md](ROADMAP.md).
+
 ## Objective
 
 Prometheus is a low-budget research program aimed at testing whether a hierarchical, fractal-style neural architecture can deliver better capability per parameter than a conventional dense transformer at roughly the same model size and training cost.
+
+In plain language, the project is asking whether a model with nested modules and limited internal communication can solve useful tasks more efficiently than a more standard densely connected model.
 
 The near-term goal is not to build a frontier model immediately. The near-term goal is to identify one architectural advantage that is:
 
@@ -12,6 +18,19 @@ The near-term goal is not to build a frontier model immediately. The near-term g
 4. Plausibly scalable if it works
 
 The long-term goal is more ambitious: if the architecture demonstrates persistent wins under tight compute constraints, scale it into a model family that can outperform stronger baselines at its size class.
+
+## Key Terms
+
+This plan uses the following terms repeatedly:
+
+1. Dense transformer baseline: a standard reference model used as the control for comparison
+2. Hierarchical modular network: a model whose computation is organized into nested groups or modules
+3. Sparse connectivity: a design where only a limited subset of possible internal communication paths are active
+4. Routing: the way information travels through the model's internal modules or connections
+5. Fan-in: the set of upstream inputs that feed into a downstream unit or module
+6. Sufficient-set activation: the idea that only a smaller subset of possible upstream inputs may be needed to trigger the right downstream behavior
+7. FLOPs: a standard rough measure of how much computation a model run or training run requires
+8. Ablation: a comparison where one feature is removed so its causal contribution can be measured
 
 ## Working Thesis
 
@@ -29,6 +48,8 @@ Prometheus will focus on a machine-learning interpretation of those ideas rather
 ## Core Hypothesis
 
 A hierarchical modular network with mostly local computation, sparse long-range shortcuts, and structured upstream-to-downstream sparsity can improve neural efficiency by reducing redundant communication and unnecessary fan-in. If that is true, the architecture should outperform a dense baseline on selected tasks that require multi-step composition, routing, or long-context information flow, while matching or approaching baseline performance on general language modeling at similar parameter count and training FLOPs.
+
+The practical meaning of this hypothesis is simple: if the architecture is working as intended, it should either do better work at the same cost or similar work at lower cost.
 
 ## Non-Goals for the First Pass
 
@@ -57,6 +78,8 @@ At a high level:
 4. Communication is dense within a local group and sparse across distant groups.
 
 This preserves the intuitive fractal structure while keeping the system implementable in modern deep learning frameworks.
+
+The word fractal here should not be read as a strict mathematical claim. In this plan it means that similar organizational patterns may repeat across scales of the model.
 
 ### 2. Nonuniform Branching Hypothesis
 
@@ -97,6 +120,8 @@ This suggests two useful design goals:
 
 1. Remove redundant fan-in that does not materially improve downstream predictability.
 2. Encourage sparse causal structure where important upstream combinations remain sufficient to trigger the correct downstream behavior.
+
+This is an architectural hypothesis, not a claim that the exact minimal subset can always be identified cleanly in practice.
 
 For the first pass, this should not be enforced with a hard statistical guarantee. It should be tested through approximations such as:
 
@@ -148,6 +173,8 @@ Can structured sparsity, hierarchical routing, and minimal sufficient connectivi
 
 That question is materially different from asking whether the brain is a good metaphor. A metaphor can inspire the design, but only measured efficiency gains can justify continued investment.
 
+In other words, the project is not trying to prove that brains and language models are the same thing. It is trying to test whether a few brain-inspired structural ideas produce measurable engineering value.
+
 ## First-Pass Experimental Program
 
 ### Experiment Goal
@@ -180,6 +207,8 @@ As much as possible, keep the following fixed across experiments:
 5. Hardware budget
 6. Approximate total FLOPs
 
+The reason for controlling these variables is to make results interpretable. If too many things change at once, it becomes hard to know whether the architecture helped or whether the comparison was simply unfair.
+
 ### Evaluation Targets
 
 The first pass should evaluate on a narrow but meaningful suite:
@@ -195,6 +224,8 @@ The first pass should evaluate on a narrow but meaningful suite:
 
 The initial success condition is not universal dominance. The initial success condition is a credible, repeated advantage in at least one target capability without unacceptable regression elsewhere.
 
+This matters because an early-stage research project should first look for one credible signal, not for proof of universal superiority.
+
 ## Success Criteria
 
 Prometheus earns a second round of funding only if at least one of the following is true:
@@ -206,6 +237,8 @@ Prometheus earns a second round of funding only if at least one of the following
 5. The modular variants degrade more gracefully than the dense baseline when routing, edge, or compute budgets are tightened.
 
 If none of those happen, the architecture has not yet earned more complexity.
+
+That is an intentional standard. A more complex model should be required to justify its own existence.
 
 ## Budget-Gated Roadmap
 

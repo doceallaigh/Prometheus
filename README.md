@@ -6,6 +6,22 @@ The repository is not intended to jump directly to a frontier-scale model. Its f
 
 The guiding research direction is defined in [PLAN.md](PLAN.md), and the staged execution path is defined in [ROADMAP.md](ROADMAP.md).
 
+If you are new to this repository, read this file first, then [PLAN.md](PLAN.md), then [ROADMAP.md](ROADMAP.md).
+
+## Plain-Language Summary
+
+Prometheus is trying to answer a focused question:
+
+Can a neural-network design with structured hierarchy and sparse internal communication do more useful work per unit of size or compute than a more conventional dense design?
+
+In simpler terms, the project is testing whether a model can become more efficient by:
+
+1. Organizing computation into nested modules rather than a flat stack
+2. Limiting unnecessary internal connections
+3. Preserving only the most useful pathways needed for a downstream computation
+
+The repository does not assume this idea is true. It exists to test the idea carefully.
+
 ## Top-Level Purpose
 
 The repository exists to do four things well:
@@ -36,6 +52,21 @@ The main documents are:
 3. [README.md](README.md): repository purpose and implementation guidance
 
 If a code change conflicts with those documents, the conflict should be resolved explicitly rather than ignored.
+
+## Core Terms
+
+The documents in this repository use a small set of recurring terms.
+
+1. Dense baseline: a conventional reference model with broadly available communication paths, used as the fairness control for comparisons
+2. Variant: any experimental model that changes one or more architectural features relative to the baseline
+3. Hierarchical modularity: organizing computation into nested groups or modules rather than treating every layer or block as part of one flat structure
+4. Sparse connectivity: allowing only a limited subset of possible internal connections so that communication has lower cost
+5. Routing: the path by which information moves through modules or connections inside the model
+6. Sufficient-set pruning: removing incoming connections until only a near-minimal set remains that still supports the desired downstream behavior
+7. Ablation: turning off or removing one feature at a time to measure whether that feature actually caused an observed result
+8. Capability per parameter: how much useful performance is achieved for a given model size
+9. Capability per unit compute: how much useful performance is achieved for a given amount of computation, time, or hardware effort
+10. Agent-driven project: a project where implementation is performed partly by AI coding agents across multiple sessions, which makes explicit documentation and validation especially important
 
 ## Developer Guide
 
