@@ -10,7 +10,11 @@ from prometheus.config import ModelConfig
 
 
 class CausalSelfAttention(nn.Module):
+    """Masked multi-head self-attention for causal language modeling."""
+
     def __init__(self, embedding_dim: int, num_heads: int, dropout: float):
+        """Initialize the projection layers and attention head geometry."""
+
         super().__init__()
         if embedding_dim % num_heads != 0:
             raise ValueError("embedding_dim must be divisible by num_heads")
@@ -21,6 +25,8 @@ class CausalSelfAttention(nn.Module):
         self.dropout = dropout
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Apply causal self-attention to a batch of token embeddings."""
+
         batch_size, sequence_length, embedding_dim = x.shape
         qkv = self.qkv(x)
         q, k, v = qkv.chunk(3, dim=-1)
@@ -40,6 +46,8 @@ class CausalSelfAttention(nn.Module):
 
 
 def _valid_head_count(embedding_dim: int, preferred_heads: int) -> int:
+    """Choose the largest head count up to the preference that divides the width."""
+
     candidate = min(preferred_heads, embedding_dim)
     while candidate > 1:
         if embedding_dim % candidate == 0:
@@ -49,7 +57,11 @@ def _valid_head_count(embedding_dim: int, preferred_heads: int) -> int:
 
 
 class FeedForward(nn.Module):
+    """Transformer MLP block with GELU activation and dropout."""
+
     def __init__(self, embedding_dim: int, mlp_ratio: int, dropout: float):
+        """Create the two-layer feedforward network for one transformer block."""
+
         super().__init__()
         hidden_dim = embedding_dim * mlp_ratio
         self.net = nn.Sequential(
@@ -60,11 +72,17 @@ class FeedForward(nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Transform token embeddings through the block MLP."""
+
         return self.net(x)
 
 
 class TransformerBlock(nn.Module):
+    """Pre-norm transformer block with attention and feedforward residual paths."""
+
     def __init__(self, embedding_dim: int, num_heads: int, mlp_ratio: int, dropout: float):
+        """Build the normalization, attention, and feedforward submodules."""
+
         super().__init__()
         self.attention_norm = nn.LayerNorm(embedding_dim)
         self.attention = CausalSelfAttention(embedding_dim, num_heads, dropout)
@@ -72,6 +90,8 @@ class TransformerBlock(nn.Module):
         self.feedforward = FeedForward(embedding_dim, mlp_ratio, dropout)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Apply attention and feedforward updates with residual connections."""
+
         x = x + self.attention(self.attention_norm(x))
         x = x + self.feedforward(self.feedforward_norm(x))
         return x
@@ -79,12 +99,18 @@ class TransformerBlock(nn.Module):
 
 @dataclass(slots=True)
 class ForwardOutput:
+    """Model outputs consisting of logits and an optional training loss."""
+
     logits: torch.Tensor
     loss: torch.Tensor | None
 
 
 class LanguageModelBase(nn.Module):
+    """Shared embedding and output-head utilities for Prometheus language models."""
+
     def __init__(self, config: ModelConfig, sequence_length: int):
+        """Initialize token embeddings, positions, normalization, and LM head."""
+
         super().__init__()
         if not isinstance(config.vocab_size, int):
             raise ValueError("Model vocab_size must be resolved to an integer before construction.")
@@ -97,6 +123,8 @@ class LanguageModelBase(nn.Module):
         self.lm_head = nn.Linear(config.embedding_dim, config.vocab_size, bias=False)
 
     def _initialize_weights(self) -> None:
+        """Initialize linear and embedding weights with small normal noise."""
+
         for module in self.modules():
             if isinstance(module, (nn.Linear, nn.Embedding)):
                 nn.init.normal_(module.weight, mean=0.0, std=0.02)
@@ -104,6 +132,8 @@ class LanguageModelBase(nn.Module):
                     nn.init.zeros_(module.bias)
 
     def _embed(self, tokens: torch.Tensor) -> torch.Tensor:
+        """Embed token ids and add learned positional embeddings."""
+
         _, sequence_length = tokens.shape
         if sequence_length > self.sequence_length:
             raise ValueError("Input sequence length exceeds the configured model context window.")
@@ -112,6 +142,8 @@ class LanguageModelBase(nn.Module):
         return self.dropout(x)
 
     def _finalize(self, x: torch.Tensor, targets: torch.Tensor | None = None) -> ForwardOutput:
+        """Project hidden states to logits and optionally compute cross-entropy loss."""
+
         logits = self.lm_head(self.norm(x))
         loss = None
         if targets is not None:
@@ -120,7 +152,11 @@ class LanguageModelBase(nn.Module):
 
 
 class DenseTransformerLM(LanguageModelBase):
+    """Standard dense transformer baseline used as the experiment control."""
+
     def __init__(self, config: ModelConfig, sequence_length: int):
+        """Construct the configured stack of dense transformer blocks."""
+
         super().__init__(config, sequence_length)
         self.blocks = nn.ModuleList(
             [
@@ -137,6 +173,8 @@ class DenseTransformerLM(LanguageModelBase):
         self.lm_head.weight = self.token_embeddings.weight
 
     def forward(self, tokens: torch.Tensor, targets: torch.Tensor | None = None) -> ForwardOutput:
+        """Run dense transformer blocks over token inputs and return model outputs."""
+
         x = self._embed(tokens)
         for block in self.blocks:
             x = block(x)
@@ -144,7 +182,11 @@ class DenseTransformerLM(LanguageModelBase):
 
 
 class StaticRouter(nn.Module):
+    """Fixed routing layer that mixes module summaries under a topology mask."""
+
     def __init__(self, num_groups: int, topology: str, top_k: int | None):
+        """Create routing logits and the allowed communication mask."""
+
         super().__init__()
         self.num_groups = num_groups
         self.topology = topology
@@ -154,6 +196,8 @@ class StaticRouter(nn.Module):
 
     @staticmethod
     def _build_mask(num_groups: int, topology: str) -> torch.Tensor:
+        """Build the boolean adjacency mask implied by the selected topology."""
+
         mask = torch.zeros(num_groups, num_groups, dtype=torch.bool)
         for destination in range(num_groups):
             for source in range(num_groups):
@@ -171,6 +215,8 @@ class StaticRouter(nn.Module):
         return mask
 
     def forward(self, summaries: torch.Tensor) -> torch.Tensor:
+        """Mix group summaries according to learned weights constrained by the mask."""
+
         scores = self.routing_logits.masked_fill(~self.routing_mask, float("-inf"))
         if self.top_k is not None and self.top_k < self.num_groups:
             top_values, top_indices = torch.topk(scores, k=self.top_k, dim=-1)
@@ -183,7 +229,11 @@ class StaticRouter(nn.Module):
 
 
 class ModularStage(nn.Module):
+    """One modular processing stage with local blocks and routed group summaries."""
+
     def __init__(self, embedding_dim: int, num_heads: int, mlp_ratio: int, dropout: float, group_count: int, depth: int, topology: str, top_k: int | None):
+        """Partition channels into groups, attach local blocks, and configure routing."""
+
         super().__init__()
         if embedding_dim % group_count != 0:
             raise ValueError("embedding_dim must be divisible by each group count in the stage schedule")
@@ -211,6 +261,8 @@ class ModularStage(nn.Module):
         self.router_norm = nn.LayerNorm(group_dim)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Run grouped local computation, summarize groups, and route updates."""
+
         batch_size, sequence_length, embedding_dim = x.shape
         grouped = x.view(batch_size, sequence_length, self.group_count, self.group_dim)
         outputs = []
@@ -227,7 +279,11 @@ class ModularStage(nn.Module):
 
 
 class ModularTransformerLM(LanguageModelBase):
+    """Hierarchical modular transformer variant with fixed inter-group routing."""
+
     def __init__(self, config: ModelConfig, sequence_length: int):
+        """Construct the configured sequence of modular processing stages."""
+
         super().__init__(config, sequence_length)
         group_schedule = config.stage_groups or [2, 1]
         depth_schedule = config.stage_depths or [1 for _ in group_schedule]
@@ -252,6 +308,8 @@ class ModularTransformerLM(LanguageModelBase):
         self.lm_head.weight = self.token_embeddings.weight
 
     def forward(self, tokens: torch.Tensor, targets: torch.Tensor | None = None) -> ForwardOutput:
+        """Run modular stages over token inputs and return model outputs."""
+
         x = self._embed(tokens)
         for stage in self.stages:
             x = stage(x)
@@ -259,6 +317,8 @@ class ModularTransformerLM(LanguageModelBase):
 
 
 def build_model(config: ModelConfig, sequence_length: int) -> LanguageModelBase:
+    """Instantiate the requested dense or modular language-model variant."""
+
     if config.architecture == "dense":
         return DenseTransformerLM(config, sequence_length)
     if config.architecture == "modular":

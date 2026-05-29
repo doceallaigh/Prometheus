@@ -9,6 +9,8 @@ from prometheus.config import DataConfig
 
 
 def synthetic_corpus(repeats: int) -> str:
+    """Build a small repeated corpus for smoke tests and prototype runs."""
+
     base_examples = [
         "the modular network routes local signals before sharing global summaries.",
         "sparse communication should reduce wasted computation without losing useful state.",
@@ -21,11 +23,15 @@ def synthetic_corpus(repeats: int) -> str:
 
 @dataclass(slots=True)
 class CharacterTokenizer:
+    """Minimal character-level tokenizer backed by explicit lookup tables."""
+
     stoi: dict[str, int]
     itos: dict[int, str]
 
     @classmethod
     def build(cls, text: str) -> "CharacterTokenizer":
+        """Create a tokenizer from the distinct characters present in text."""
+
         vocabulary = sorted(set(text))
         stoi = {ch: index for index, ch in enumerate(vocabulary)}
         itos = {index: ch for ch, index in stoi.items()}
@@ -33,30 +39,44 @@ class CharacterTokenizer:
 
     @property
     def vocab_size(self) -> int:
+        """Return the number of unique characters in the tokenizer."""
+
         return len(self.stoi)
 
     def encode(self, text: str) -> list[int]:
+        """Convert text into integer token ids."""
+
         return [self.stoi[ch] for ch in text]
 
     def decode(self, tokens: list[int]) -> str:
+        """Convert token ids back into a character string."""
+
         return "".join(self.itos[token] for token in tokens)
 
 
 @dataclass(slots=True)
 class DatasetBundle:
+    """Tokenized train and validation tensors plus the tokenizer used."""
+
     tokenizer: CharacterTokenizer
     train_tokens: torch.Tensor
     val_tokens: torch.Tensor
 
 
 class LanguageModelingDataset:
+    """Random-window sampler for next-token language-model batches."""
+
     def __init__(self, tokens: torch.Tensor, sequence_length: int):
+        """Store a token sequence and validate it is long enough to sample from."""
+
         if tokens.numel() <= sequence_length:
             raise ValueError("Dataset is too small for the configured sequence length.")
         self.tokens = tokens
         self.sequence_length = sequence_length
 
     def sample_batch(self, batch_size: int, device: torch.device) -> tuple[torch.Tensor, torch.Tensor]:
+        """Sample random contiguous input-target windows for next-token prediction."""
+
         max_index = self.tokens.size(0) - self.sequence_length - 1
         starts = torch.randint(0, max_index, (batch_size,))
         batch_inputs = []
@@ -71,6 +91,8 @@ class LanguageModelingDataset:
 
 
 def _load_text(config: DataConfig) -> str:
+    """Load raw training text from synthetic examples or a configured file."""
+
     if config.dataset_type == "synthetic":
         return synthetic_corpus(config.synthetic_repeats)
     if config.dataset_type == "text" and config.path:
@@ -79,6 +101,8 @@ def _load_text(config: DataConfig) -> str:
 
 
 def build_datasets(config: DataConfig) -> DatasetBundle:
+    """Create tokenized train and validation tensors from the configured corpus."""
+
     text = _load_text(config)
     tokenizer = CharacterTokenizer.build(text)
     encoded = torch.tensor(tokenizer.encode(text), dtype=torch.long)

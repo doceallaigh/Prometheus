@@ -10,6 +10,8 @@ from prometheus.train import run_training
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Create the command-line parser for training and reporting commands."""
+
     parser = argparse.ArgumentParser(description="Prometheus experiment CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -26,6 +28,8 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> None:
+    """Dispatch the selected CLI command."""
+
     parser = build_parser()
     args = parser.parse_args()
     if args.command == "train":

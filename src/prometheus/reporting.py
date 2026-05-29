@@ -6,10 +6,14 @@ from typing import Any
 
 
 def _read_json(path: Path) -> dict[str, Any]:
+    """Read a JSON file into a dictionary."""
+
     return json.loads(path.read_text(encoding="utf-8"))
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
+    """Read newline-delimited JSON records from disk."""
+
     records = []
     for line in path.read_text(encoding="utf-8").splitlines():
         if line.strip():
@@ -18,6 +22,8 @@ def _read_jsonl(path: Path) -> list[dict[str, Any]]:
 
 
 def summarize_run(run_dir: str | Path) -> dict[str, Any]:
+    """Summarize the key metrics and metadata stored for one run directory."""
+
     path = Path(run_dir)
     model_summary_path = path / "model.summary.json"
     model_summary = _read_json(model_summary_path) if model_summary_path.exists() else {}
@@ -45,6 +51,8 @@ def summarize_run(run_dir: str | Path) -> dict[str, Any]:
 
 
 def comparison_markdown(run_summaries: list[dict[str, Any]]) -> str:
+    """Render multiple run summaries as a Markdown comparison table."""
+
     headers = [
         "run",
         "architecture",
@@ -73,6 +81,8 @@ def comparison_markdown(run_summaries: list[dict[str, Any]]) -> str:
 
 
 def _format_number(value: Any) -> str:
+    """Format scalar values for Markdown table output."""
+
     if isinstance(value, float):
         return f"{value:.4f}"
     if value is None:

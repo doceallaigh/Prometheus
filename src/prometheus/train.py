@@ -16,6 +16,8 @@ from prometheus.model import LanguageModelBase, build_model
 
 
 def set_seed(seed: int) -> None:
+    """Seed Python and Torch RNG state for reproducible prototype runs."""
+
     random.seed(seed)
     torch.manual_seed(seed)
     if torch.cuda.is_available():
@@ -23,6 +25,8 @@ def set_seed(seed: int) -> None:
 
 
 def resolve_device(raw_device: str) -> torch.device:
+    """Resolve an explicit device string or choose a default available device."""
+
     if raw_device == "auto":
         if torch.cuda.is_available():
             return torch.device("cuda")
@@ -31,11 +35,15 @@ def resolve_device(raw_device: str) -> torch.device:
 
 
 def resolve_model_config(config: PrometheusConfig, data_bundle: DatasetBundle) -> ModelConfig:
+    """Fill in runtime-derived model settings such as an automatic vocab size."""
+
     vocab_size = data_bundle.tokenizer.vocab_size if config.model.vocab_size == "auto" else config.model.vocab_size
     return replace(config.model, vocab_size=int(vocab_size))
 
 
 def _make_run_directory(config: PrometheusConfig) -> Path:
+    """Create a timestamped output directory for a single run."""
+
     timestamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
     run_dir = Path(config.experiment.output_dir) / f"{config.experiment.run_name}-{timestamp}"
     run_dir.mkdir(parents=True, exist_ok=False)
@@ -43,10 +51,14 @@ def _make_run_directory(config: PrometheusConfig) -> Path:
 
 
 def _write_json(path: Path, payload: dict) -> None:
+    """Write a dictionary to disk as indented JSON."""
+
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
 
 def create_optimizer(model: LanguageModelBase, config: PrometheusConfig) -> torch.optim.Optimizer:
+    """Construct the AdamW optimizer used by prototype experiments."""
+
     return torch.optim.AdamW(
         model.parameters(),
         lr=config.training.learning_rate,
@@ -56,10 +68,14 @@ def create_optimizer(model: LanguageModelBase, config: PrometheusConfig) -> torc
 
 
 def parameter_count(model: LanguageModelBase) -> int:
+    """Count the total number of trainable and non-trainable parameters."""
+
     return sum(parameter.numel() for parameter in model.parameters())
 
 
 def learning_rate_for_step(config: PrometheusConfig, step: int) -> float:
+    """Compute the warmup-plus-cosine learning rate for a given step."""
+
     base_lr = config.training.learning_rate
     warmup_steps = max(config.training.warmup_steps, 1)
     if step < warmup_steps:
@@ -77,6 +93,8 @@ def evaluate_model(
     device: torch.device,
     max_batches: int,
 ) -> dict[str, float]:
+    """Estimate loss and perplexity over a bounded number of validation batches."""
+
     model.eval()
     losses = []
     for _ in range(max_batches):
@@ -92,6 +110,8 @@ def evaluate_model(
 
 
 def run_training(config: PrometheusConfig) -> Path:
+    """Execute one full training run and write its artifacts to disk."""
+
     set_seed(config.experiment.seed)
     data_bundle = build_datasets(config.data)
     resolved_model_config = resolve_model_config(config, data_bundle)

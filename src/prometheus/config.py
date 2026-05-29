@@ -9,6 +9,8 @@ import yaml
 
 @dataclass(slots=True)
 class ExperimentConfig:
+    """Top-level metadata controlling a single experiment run."""
+
     run_name: str
     seed: int
     device: str
@@ -17,6 +19,8 @@ class ExperimentConfig:
 
 @dataclass(slots=True)
 class DataConfig:
+    """Dataset construction settings for training and evaluation."""
+
     dataset_type: str
     sequence_length: int
     batch_size: int
@@ -27,6 +31,8 @@ class DataConfig:
 
 @dataclass(slots=True)
 class ModelConfig:
+    """Architecture parameters for dense and modular model variants."""
+
     vocab_size: int | str
     embedding_dim: int
     num_heads: int
@@ -42,6 +48,8 @@ class ModelConfig:
 
 @dataclass(slots=True)
 class TrainingConfig:
+    """Optimizer, logging, and loop control settings for training."""
+
     max_steps: int
     eval_interval: int
     log_interval: int
@@ -53,11 +61,15 @@ class TrainingConfig:
 
 @dataclass(slots=True)
 class EvaluationConfig:
+    """Evaluation loop limits applied during validation passes."""
+
     max_batches: int
 
 
 @dataclass(slots=True)
 class PrometheusConfig:
+    """Container bundling the full configuration for one experiment."""
+
     experiment: ExperimentConfig
     data: DataConfig
     model: ModelConfig
@@ -65,10 +77,14 @@ class PrometheusConfig:
     evaluation: EvaluationConfig
 
     def to_dict(self) -> dict[str, Any]:
+        """Return the nested configuration as a plain dictionary."""
+
         return asdict(self)
 
 
 def _read_yaml(path: Path) -> dict[str, Any]:
+    """Load and validate a YAML document as a mapping."""
+
     with path.open("r", encoding="utf-8") as handle:
         data = yaml.safe_load(handle)
     if not isinstance(data, dict):
@@ -77,6 +93,8 @@ def _read_yaml(path: Path) -> dict[str, Any]:
 
 
 def load_config(path: str | Path) -> PrometheusConfig:
+    """Parse a YAML config file into typed configuration dataclasses."""
+
     config_path = Path(path)
     raw = _read_yaml(config_path)
     model_values = raw["model"]
