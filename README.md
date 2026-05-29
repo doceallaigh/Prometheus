@@ -36,6 +36,44 @@ This is an experimental research codebase. It should optimize for clarity, repea
 
 Prometheus is currently focused on a first-pass budget-constrained experiment. In practice, that means small models before large models, static sparse topology before dynamic rewiring, shared training objectives before hand-labeled cognitive subsystems, a few controlled variants before many speculative ones, and reproducible evidence before narrative appeal.
 
+## Current Implementation
+
+The repository now includes a minimal runnable experiment stack for the first-pass model family:
+
+1. A dense character-level causal transformer baseline
+2. A modular variant with staged channel groups and dense routing between group summaries
+3. A sparse-routing modular variant with fixed small-world communication masks and optional top-k fan-in pruning
+4. Config-driven training runs with reproducible output directories, metric logs, config snapshots, and saved checkpoints
+5. A small reporting CLI for summarizing and comparing completed runs
+
+This is still a prototype research harness rather than a finished training system. The immediate purpose is to make baseline-versus-variant comparisons runnable and inspectable.
+
+## Quick Start
+
+Install the package in an environment with Python 3.12 and PyTorch available, then run from the repository root.
+
+```powershell
+$env:PYTHONPATH = "src"
+python -m prometheus.cli train --config configs/smoke_tiny.yaml
+python -m prometheus.cli train --config configs/smoke_modular.yaml
+python -m prometheus.cli compare --run-dir outputs/<dense-run> --run-dir outputs/<modular-run>
+```
+
+Useful configs:
+
+1. `configs/smoke_tiny.yaml`: shortest dense baseline smoke test
+2. `configs/smoke_modular.yaml`: shortest modular sparse smoke test
+3. `configs/baseline_tiny.yaml`: slightly larger dense baseline run
+4. `configs/variant_modular_dense.yaml`: modular hierarchy with dense routing
+5. `configs/variant_modular_sparse.yaml`: modular hierarchy with sparse routing and top-k fan-in
+
+Each run writes:
+
+1. `config.snapshot.json`
+2. `model.summary.json`
+3. `metrics.jsonl`
+4. `checkpoint.pt`
+
 ## Repository Documents
 
 The main documents are [PLAN.md](PLAN.md), which defines the research plan, hypotheses, and success criteria; [ROADMAP.md](ROADMAP.md), which defines the staged execution plan, user dependencies, and pre-flight setup; and [README.md](README.md), which defines repository purpose and implementation guidance.
