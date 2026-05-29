@@ -199,7 +199,11 @@ def run_training(config: PrometheusConfig) -> Path:
     model = build_model(resolved_model_config, sequence_length=config.data.sequence_length).to(device)
     optimizer = create_optimizer(model, config)
     run_dir = _make_run_directory(config)
-    _write_json(run_dir / "config.snapshot.json", config.to_dict())
+    config_snapshot = config.to_dict()
+    config_snapshot["experiment"]["requested_device"] = config.experiment.device
+    config_snapshot["experiment"]["device"] = str(device)
+    config_snapshot["model"] = asdict(resolved_model_config)
+    _write_json(run_dir / "config.snapshot.json", config_snapshot)
     _write_json(
         run_dir / "model.summary.json",
         {

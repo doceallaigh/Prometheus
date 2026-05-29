@@ -75,11 +75,15 @@ class TrainReportingInferenceTests(unittest.TestCase):
             buffer = StringIO()
             with redirect_stdout(buffer):
                 run_dir = run_training(config)
+            config_snapshot = json.loads((run_dir / "config.snapshot.json").read_text(encoding="utf-8"))
 
             self.assertTrue((run_dir / "config.snapshot.json").exists())
             self.assertTrue((run_dir / "model.summary.json").exists())
             self.assertTrue((run_dir / "metrics.jsonl").exists())
             self.assertTrue((run_dir / "checkpoint.pt").exists())
+            self.assertIsInstance(config_snapshot["model"]["vocab_size"], int)
+            self.assertEqual(config_snapshot["experiment"]["requested_device"], config.experiment.device)
+            self.assertEqual(config_snapshot["experiment"]["device"], "cpu")
             self.assertIn('"split": "train"', buffer.getvalue())
 
     def test_summarize_run_reads_artifacts_and_fallbacks(self) -> None:
