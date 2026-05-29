@@ -12,7 +12,7 @@ import torch
 
 from prometheus.config import ModelConfig, PrometheusConfig
 from prometheus.data import DatasetBundle, LanguageModelingDataset, build_datasets
-from prometheus.model import DenseTransformerLM
+from prometheus.model import LanguageModelBase, build_model
 
 
 def set_seed(seed: int) -> None:
@@ -46,13 +46,17 @@ def _write_json(path: Path, payload: dict) -> None:
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
 
-def create_optimizer(model: DenseTransformerLM, config: PrometheusConfig) -> torch.optim.Optimizer:
+def create_optimizer(model: LanguageModelBase, config: PrometheusConfig) -> torch.optim.Optimizer:
     return torch.optim.AdamW(
         model.parameters(),
         lr=config.training.learning_rate,
         weight_decay=config.training.weight_decay,
         betas=(0.9, 0.95),
     )
+
+
+def parameter_count(model: LanguageModelBase) -> int:
+    return sum(parameter.numel() for parameter in model.parameters())
 
 
 def learning_rate_for_step(config: PrometheusConfig, step: int) -> float:
@@ -67,7 +71,7 @@ def learning_rate_for_step(config: PrometheusConfig, step: int) -> float:
 
 @torch.no_grad()
 def evaluate_model(
-    model: DenseTransformerLM,
+    model: LanguageModelBase,
     dataset: LanguageModelingDataset,
     batch_size: int,
     device: torch.device,
@@ -94,10 +98,19 @@ def run_training(config: PrometheusConfig) -> Path:
     device = resolve_device(config.experiment.device)
     train_dataset = LanguageModelingDataset(data_bundle.train_tokens, config.data.sequence_length)
     val_dataset = LanguageModelingDataset(data_bundle.val_tokens, config.data.sequence_length)
-    model = DenseTransformerLM(resolved_model_config, sequence_length=config.data.sequence_length).to(device)
+    model = build_model(resolved_model_config, sequence_length=config.data.sequence_length).to(device)
     optimizer = create_optimizer(model, config)
     run_dir = _make_run_directory(config)
     _write_json(run_dir / "config.snapshot.json", config.to_dict())
+    _write_json(
+        run_dir / "model.summary.json",
+        {
+            "architecture": resolved_model_config.architecture,
+            "parameter_count": parameter_count(model),
+            "vocab_size": resolved_model_config.vocab_size,
+            "sequence_length": config.data.sequence_length,
+        },
+    )
     metrics_path = run_dir / "metrics.jsonl"
 
     for step in range(config.training.max_steps):

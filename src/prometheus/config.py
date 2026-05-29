@@ -32,7 +32,12 @@ class ModelConfig:
     num_heads: int
     num_layers: int
     dropout: float
+    architecture: str = "dense"
     mlp_ratio: int = 4
+    stage_groups: list[int] | None = None
+    stage_depths: list[int] | None = None
+    routing_topology: str = "dense"
+    routing_top_k: int | None = None
 
 
 @dataclass(slots=True)
@@ -74,10 +79,11 @@ def _read_yaml(path: Path) -> dict[str, Any]:
 def load_config(path: str | Path) -> PrometheusConfig:
     config_path = Path(path)
     raw = _read_yaml(config_path)
+    model_values = raw["model"]
     return PrometheusConfig(
         experiment=ExperimentConfig(**raw["experiment"]),
         data=DataConfig(**raw["data"]),
-        model=ModelConfig(**raw["model"]),
+        model=ModelConfig(**model_values),
         training=TrainingConfig(**raw["training"]),
         evaluation=EvaluationConfig(**raw["evaluation"]),
     )
