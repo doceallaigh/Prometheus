@@ -1,0 +1,32 @@
+experiment:
+  run_name: baseline-tiny
+  seed: 1337
+  device: auto
+  output_dir: outputs
+
+data:
+  dataset_type: synthetic
+  sequence_length: 128
+  batch_size: 16
+  train_split: 0.9
+  synthetic_repeats: 1200
+
+model:
+  vocab_size: auto
+  embedding_dim: 192
+  num_heads: 6
+  num_layers: 6
+  dropout: 0.1
+  mlp_ratio: 4
+
+training:
+  max_steps: 300
+  eval_interval: 50
+  log_interval: 10
+  learning_rate: 0.0003
+  weight_decay: 0.1
+  grad_clip: 1.0
+  warmup_steps: 20
+
+evaluation:
+  max_batches: 10
