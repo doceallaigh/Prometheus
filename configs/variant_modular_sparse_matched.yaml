@@ -1,0 +1,37 @@
+experiment:
+  run_name: variant-modular-sparse-matched
+  seed: 1337
+  device: auto
+  output_dir: outputs
+
+data:
+  dataset_type: synthetic
+  sequence_length: 128
+  batch_size: 16
+  train_split: 0.9
+  synthetic_repeats: 1200
+
+model:
+  architecture: modular
+  vocab_size: auto
+  embedding_dim: 352
+  num_heads: 8
+  num_layers: 0
+  dropout: 0.1
+  mlp_ratio: 4
+  stage_groups: [4, 2, 1]
+  stage_depths: [1, 1, 1]
+  routing_topology: small_world
+  routing_top_k: 2
+
+training:
+  max_steps: 300
+  eval_interval: 50
+  log_interval: 10
+  learning_rate: 0.0003
+  weight_decay: 0.1
+  grad_clip: 1.0
+  warmup_steps: 20
+
+evaluation:
+  max_batches: 10
