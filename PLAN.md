@@ -165,6 +165,31 @@ Specialization, if it emerges, should come from structure, routing, or auxiliary
 
 If needed, add lightweight learned gating over module communication after the static topology baseline is working. Gating is a second-step experiment, not a prerequisite for version one.
 
+## Later-Stage Research Directions
+
+The following ideas may matter to broader intelligence or longer-horizon system behavior, but they are intentionally outside the scope of the first $5k architectural pass.
+
+### 1. Persistent Internal State
+
+One possible later direction is to give the system some form of state continuity that survives the end of a prompt or interaction. The practical question is whether useful internal activity should continue, decay slowly, or be reactivated across interaction boundaries rather than being fully reset after each forward pass.
+
+This idea matters because a purely prompt-bounded system may be limited in working memory, self-maintenance, or long-horizon task persistence. In engineering terms, this could be explored through persistent latent state, recurrent state carried across turns, or a harness that preserves and updates an evolving internal state between interactions.
+
+This should not be treated as a first-pass requirement. It adds a second major axis of complexity and would make early architectural results harder to interpret.
+
+### 2. Neuronal Loops and Weak-Leak Short-Term Memory
+
+Another later direction is to test whether short-lived recurrent loops can act as a short-term memory mechanism. In this framing, a local group of units would sustain activity briefly through loops or recurrence, while also leaking a weaker signal into surrounding units or neighboring modules.
+
+The motivating intuition is that short-term memory may depend less on static storage and more on temporarily self-sustaining activity patterns with controlled diffusion into nearby computation. If implemented later, this could be tested as:
+
+1. Local recurrent submodules inside a broader feedforward hierarchy
+2. Leaky integrator-style state updates
+3. Short-horizon latent memory buffers with decay
+4. Controlled spillover from a local memory loop into adjacent modules
+
+This direction belongs after the first-pass sparse-routing and sufficient-set experiments, not before them.
+
 ## Why This Direction Is Worth Testing
 
 This plan is worth funding only if it can answer a practical question:

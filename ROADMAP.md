@@ -4,6 +4,17 @@ This document explains how the project should move from idea to prototype to dec
 
 It assumes the research direction has already been described in [PLAN.md](PLAN.md). In plain language, this roadmap is the execution checklist for testing the plan under a constrained first-pass budget.
 
+```mermaid
+flowchart TD
+	A[Pre-flight setup] --> B[Define first-pass experiment]
+	B --> C[Build training and evaluation foundation]
+	C --> D[Implement dense baseline]
+	D --> E[Implement first variants]
+	E --> F[Run controlled benchmark pass]
+	F --> G[Narrow to strongest idea]
+	G --> H[Go or no-go decision]
+```
+
 ## Pre-Flight User Setup
 
 This section exists to remove execution friction before any meaningful engineering work begins. For the $5k plan, the fastest path is to frontload account setup, spending controls, access, and public-data readiness.
@@ -29,15 +40,7 @@ Make it possible to start implementation and pilot runs immediately without bloc
 
 ### Recommended Output
 
-Produce a ready state with:
-
-1. One approved cloud project
-2. Billing enabled
-3. GPU quota or approved compute path
-4. Storage path for artifacts and checkpoints
-5. Budget alerts configured
-6. A safe credential-delivery plan
-7. A short list of approved public data sources
+The pre-flight phase is complete when there is one approved cloud project, billing is active, GPU access has a realistic path, storage exists for artifacts and checkpoints, budget alerts are configured, credentials have a safe delivery path, and the allowed public data sources are known.
 
 ### Copilot Usage Note
 
@@ -51,11 +54,7 @@ Recommended practice:
 4. Start a fresh session after major milestones if context has become noisy.
 5. Expect total Copilot usage for the first implementation push to be materially higher than planning-only usage.
 
-Rough operating bands:
-
-1. Planning and roadmap refinement: low
-2. Initial scaffolding and implementation: moderate
-3. Full day of prototype execution with debugging and evaluation: high
+The rough usage pattern is simple: planning and roadmap work should be relatively light, initial scaffolding and implementation will be moderate, and a full day of prototype execution with debugging and evaluation will be the heaviest phase.
 
 The exact token count is less important than reducing avoidable rework, repeated file reads, and oversized command output.
 
@@ -80,50 +79,10 @@ Do not begin implementation until cloud access, billing, and credential handling
 
 ## Terms Used in This Roadmap
 
-1. Baseline: the standard reference model against which all experimental variants are compared
-2. Variant: an experimental version of the model that changes one or more architectural features
-3. Pilot run: a short, inexpensive run used to confirm that code, training, and evaluation work before spending more money
-4. Benchmark suite: the set of tasks and measurements used to compare baseline and variants
-5. Ablation: a controlled comparison where one feature is removed to see whether it really matters
-6. Decision gate: a point where the project should stop and explicitly decide whether to continue
-7. User-dependent progress: steps that cannot proceed without user approval, access, or funding decisions
+In this document, a baseline is the standard reference model, and a variant is any experimental version that changes one or more architectural features. A pilot run is a short, inexpensive run used to confirm that code, training, and evaluation work before more money is spent. A benchmark suite is the set of tasks and measurements used to compare baseline and variants. An ablation is a controlled comparison where one feature is removed to see whether it really matters. A decision gate is a point where the project should stop and explicitly decide whether to continue. User-dependent progress refers to steps that cannot proceed without user approval, access, or funding decisions.
 
 ## High-Level Step Tree
-
-### 0. Remove execution friction
-#### 0.1 Confirm budget and spending authority
-#### 0.2 Confirm cloud project, billing, and compute access
-#### 0.3 Confirm credential handling and storage paths
-#### 0.4 Confirm approved public data sources
-
-### 1. Define the first-pass experiment
-#### 1.1 Choose the exact problem scope
-#### 1.2 Choose the baseline and comparison variants
-#### 1.3 Choose the budget, hardware, and success gates
-
-### 2. Build the experimental foundation
-#### 2.1 Set up the codebase and training pipeline
-#### 2.2 Implement the dense baseline
-#### 2.3 Implement evaluation and reporting
-
-### 3. Add the first architectural hypotheses
-#### 3.1 Add static sparse connectivity
-#### 3.2 Add hierarchical modular structure
-#### 3.3 Add sufficient-set fan-in pruning
-
-### 4. Run the first controlled benchmark pass
-#### 4.1 Train the baseline and variants
-#### 4.2 Compare quality, efficiency, and routing behavior
-#### 4.3 Decide whether the signal is real
-
-### 5. Narrow to the strongest idea
-#### 5.1 Kill weak variants
-#### 5.2 Refine the strongest topology or pruning mechanism
-#### 5.3 Test limited scaling behavior
-
-### 6. Make the go or no-go decision
-#### 6.1 Decide whether to invest more money
-#### 6.2 Decide whether to simplify, pivot, or stop
+The roadmap moves in a straight line: first remove execution friction, then define the first-pass experiment, then build the foundation needed to run it, then add the smallest architectural changes worth testing, then run the controlled benchmark pass, then narrow to the strongest mechanism, and only then make the investment decision.
 
 ## Guiding Principle
 
@@ -158,15 +117,7 @@ This phase exists so the project knows exactly what it is trying to prove before
 
 ### Recommended Output
 
-Produce a one-page experiment brief with:
-
-1. Baseline model
-2. Variant list
-3. Datasets
-4. Metrics
-5. Hardware assumptions
-6. Budget cap
-7. Go or no-go thresholds
+Produce a one-page experiment brief that names the baseline model, the variant set, the datasets, the metrics, the hardware assumptions, the budget cap, and the go or no-go thresholds.
 
 If this output does not exist, later implementation work is much more likely to drift.
 
@@ -256,10 +207,12 @@ This phase should be conservative. The purpose is not to express every idea in t
 
 ### Variant Tree
 
-1. Variant A: Hierarchical modular structure without sparse communication
-2. Variant B: Hierarchical modular structure with static sparse connectivity
-3. Variant C: Variant B plus sufficient-set fan-in pruning
-4. Optional Variant D: Uneven or superlinear branching schedule
+```mermaid
+flowchart TD
+	A[Variant A<br>Hierarchical modular structure only] --> B[Variant B<br>Add static sparse connectivity]
+	B --> C[Variant C<br>Add sufficient-set fan-in pruning]
+	C --> D[Optional Variant D<br>Test uneven or superlinear branching]
+```
 
 ### Actionable Steps
 
@@ -403,12 +356,7 @@ This is a formal decision phase, not just a summary. The project should either e
 
 ### Recommended Output
 
-Produce a clear decision with one of four outcomes:
-
-1. Continue with focused iteration
-2. Continue with a larger budget
-3. Simplify and retest
-4. Stop the current direction
+Produce a clear decision memo that lands on one of four outcomes: continue with focused iteration, continue with a larger budget, simplify and retest, or stop the current direction.
 
 ### User-Dependent Progress
 
@@ -424,16 +372,7 @@ No second-round spending should happen without a written decision memo tied to m
 
 ## Cross-Cutting User Dependencies
 
-Some decisions affect every phase:
-
-1. Total budget ceiling for the first pass
-2. Preferred speed versus rigor tradeoff
-3. Tolerance for inconclusive outcomes
-4. Willingness to abandon biologically appealing ideas that do not produce measurable value
-5. Whether the primary success mode is scientific evidence, architectural insight, or a path toward a usable model
-6. Whether cloud credentials and account access can be provided quickly and safely
-7. Whether public data can be used directly without legal or policy review
-8. Whether Copilot usage should be optimized for speed, cost discipline, or maximal persistence within a session
+Some decisions affect every phase. The most important are the total first-pass budget, the preferred speed-versus-rigor tradeoff, tolerance for inconclusive outcomes, willingness to abandon biologically appealing ideas that do not produce measurable value, the intended success mode of the project, the speed and safety of cloud access, whether public data can be used without extra review, and how aggressively Copilot usage should be optimized for speed versus context discipline.
 
 ## Immediate Next Actions
 

@@ -14,42 +14,31 @@ Prometheus is trying to answer a focused question:
 
 Can a neural-network design with structured hierarchy and sparse internal communication do more useful work per unit of size or compute than a more conventional dense design?
 
-In simpler terms, the project is testing whether a model can become more efficient by:
-
-1. Organizing computation into nested modules rather than a flat stack
-2. Limiting unnecessary internal connections
-3. Preserving only the most useful pathways needed for a downstream computation
+In simpler terms, the project is testing whether a model can become more efficient by organizing computation into nested modules rather than a flat stack, limiting unnecessary internal connections, and preserving only the most useful pathways needed for a downstream computation.
 
 The repository does not assume this idea is true. It exists to test the idea carefully.
 
+```mermaid
+flowchart LR
+	A[Dense baseline] --> B[Hierarchical modules]
+	B --> C[Sparse connectivity]
+	C --> D[Sufficient-set pruning]
+	D --> E[Measured comparison]
+```
+
 ## Top-Level Purpose
 
-The repository exists to do four things well:
-
-1. Define a small number of architectural hypotheses clearly.
-2. Implement controlled baseline and variant models fairly.
-3. Evaluate those models on capability and efficiency metrics that match the hypotheses.
-4. Produce evidence strong enough to justify either further investment or abandonment.
+The repository exists to do four things well: define a small number of architectural hypotheses clearly, implement controlled baseline and variant models fairly, evaluate those models on capability and efficiency metrics that match the hypotheses, and produce evidence strong enough to justify either further investment or abandonment.
 
 This is an experimental research codebase. It should optimize for clarity, repeatability, and decision quality before it optimizes for breadth.
 
 ## Current Project Stance
 
-Prometheus is currently focused on a first-pass budget-constrained experiment. That means:
-
-1. Small models before large models
-2. Static sparse topology before dynamic rewiring
-3. Shared training objectives before hand-labeled cognitive subsystems
-4. A few controlled variants before many speculative ones
-5. Reproducible evidence before narrative appeal
+Prometheus is currently focused on a first-pass budget-constrained experiment. In practice, that means small models before large models, static sparse topology before dynamic rewiring, shared training objectives before hand-labeled cognitive subsystems, a few controlled variants before many speculative ones, and reproducible evidence before narrative appeal.
 
 ## Repository Documents
 
-The main documents are:
-
-1. [PLAN.md](PLAN.md): research plan, hypotheses, and success criteria
-2. [ROADMAP.md](ROADMAP.md): staged execution plan, user dependencies, and pre-flight setup
-3. [README.md](README.md): repository purpose and implementation guidance
+The main documents are [PLAN.md](PLAN.md), which defines the research plan, hypotheses, and success criteria; [ROADMAP.md](ROADMAP.md), which defines the staged execution plan, user dependencies, and pre-flight setup; and [README.md](README.md), which defines repository purpose and implementation guidance.
 
 If a code change conflicts with those documents, the conflict should be resolved explicitly rather than ignored.
 
