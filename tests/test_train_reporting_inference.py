@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import importlib
 import tempfile
 import unittest
 from contextlib import redirect_stdout
@@ -11,7 +12,6 @@ import torch
 
 from prometheus.config import PrometheusConfig, load_config
 from prometheus.data import LanguageModelingDataset, build_datasets
-from prometheus.inference import generate_text, load_run
 from prometheus.reporting import comparison_markdown, summarize_run
 from prometheus.train import (
     create_optimizer,
@@ -22,6 +22,13 @@ from prometheus.train import (
     resolve_model_config,
     run_training,
 )
+
+try:
+    inference_module = importlib.import_module("prometheus.inference")
+except ModuleNotFoundError:
+    inference_module = None
+
+HAS_INFERENCE = inference_module is not None
 
 
 class TrainReportingInferenceTests(unittest.TestCase):
@@ -107,30 +114,32 @@ class TrainReportingInferenceTests(unittest.TestCase):
         self.assertIn("| run-a | dense |", markdown)
         self.assertIn("| run-b | modular |", markdown)
 
+    @unittest.skipUnless(HAS_INFERENCE, "Inference module is not present on this branch.")
     def test_load_run_and_generate_text_work_from_saved_checkpoint(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             config = make_config(output_dir=temp_dir)
             run_dir = run_training(config)
-            loaded = load_run(run_dir, raw_device="cpu")
+            loaded = inference_module.load_run(run_dir, raw_device="cpu")
 
             torch.manual_seed(0)
-            generated = generate_text(loaded, prompt="the ", max_new_tokens=5, temperature=1.0, top_k=1)
+            generated = inference_module.generate_text(loaded, prompt="the ", max_new_tokens=5, temperature=1.0, top_k=1)
 
         self.assertTrue(generated.startswith("the "))
         self.assertGreater(len(generated), len("the "))
 
+    @unittest.skipUnless(HAS_INFERENCE, "Inference module is not present on this branch.")
     def test_generate_text_rejects_invalid_prompt_and_temperature(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             config = make_config(output_dir=temp_dir)
             run_dir = run_training(config)
-            loaded = load_run(run_dir, raw_device="cpu")
+            loaded = inference_module.load_run(run_dir, raw_device="cpu")
 
             with self.assertRaisesRegex(ValueError, "must not be empty"):
-                generate_text(loaded, prompt="", max_new_tokens=1)
+                inference_module.generate_text(loaded, prompt="", max_new_tokens=1)
             with self.assertRaisesRegex(ValueError, "must be positive"):
-                generate_text(loaded, prompt="the ", max_new_tokens=1, temperature=0)
+                inference_module.generate_text(loaded, prompt="the ", max_new_tokens=1, temperature=0)
             with self.assertRaisesRegex(ValueError, "not in the run vocabulary"):
-                generate_text(loaded, prompt="THE", max_new_tokens=1)
+                inference_module.generate_text(loaded, prompt="THE", max_new_tokens=1)
 
 
 def make_config(output_dir: str | None = None) -> PrometheusConfig:

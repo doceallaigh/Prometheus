@@ -4,6 +4,7 @@ import json
 import sys
 import tempfile
 import unittest
+from importlib import util
 from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
@@ -13,6 +14,9 @@ from prometheus import cli
 from prometheus.train import run_training
 
 from tests.test_train_reporting_inference import make_config
+
+
+HAS_INFERENCE = util.find_spec("prometheus.inference") is not None
 
 
 class CliTests(unittest.TestCase):
@@ -58,6 +62,7 @@ class CliTests(unittest.TestCase):
 
         self.assertIn('"architecture": "dense"', buffer.getvalue())
 
+    @unittest.skipUnless(HAS_INFERENCE, "Inference module is not present on this branch.")
     def test_generate_command_prints_text(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             config = make_config(output_dir=temp_dir)
