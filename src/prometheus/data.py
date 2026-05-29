@@ -9,7 +9,14 @@ from prometheus.config import DataConfig
 
 
 def synthetic_corpus(repeats: int) -> str:
-    """Build a small repeated corpus for smoke tests and prototype runs."""
+    """Build a small repeated corpus for smoke tests and prototype runs.
+
+    Args:
+        repeats: Number of times to repeat the base sentence set.
+
+    Returns:
+        str: Concatenated synthetic corpus text.
+    """
 
     base_examples = [
         "the modular network routes local signals before sharing global summaries.",
@@ -30,7 +37,14 @@ class CharacterTokenizer:
 
     @classmethod
     def build(cls, text: str) -> "CharacterTokenizer":
-        """Create a tokenizer from the distinct characters present in text."""
+        """Create a tokenizer from the distinct characters present in text.
+
+        Args:
+            text: Source text used to derive the vocabulary.
+
+        Returns:
+            CharacterTokenizer: Tokenizer covering every character in the text.
+        """
 
         vocabulary = sorted(set(text))
         stoi = {ch: index for index, ch in enumerate(vocabulary)}
@@ -39,17 +53,35 @@ class CharacterTokenizer:
 
     @property
     def vocab_size(self) -> int:
-        """Return the number of unique characters in the tokenizer."""
+        """Return the number of unique characters in the tokenizer.
+
+        Returns:
+            int: Size of the tokenizer vocabulary.
+        """
 
         return len(self.stoi)
 
     def encode(self, text: str) -> list[int]:
-        """Convert text into integer token ids."""
+        """Convert text into integer token ids.
+
+        Args:
+            text: Character string to tokenize.
+
+        Returns:
+            list[int]: Token ids corresponding to the input text.
+        """
 
         return [self.stoi[ch] for ch in text]
 
     def decode(self, tokens: list[int]) -> str:
-        """Convert token ids back into a character string."""
+        """Convert token ids back into a character string.
+
+        Args:
+            tokens: Token ids to decode.
+
+        Returns:
+            str: Decoded character string.
+        """
 
         return "".join(self.itos[token] for token in tokens)
 
@@ -67,7 +99,12 @@ class LanguageModelingDataset:
     """Random-window sampler for next-token language-model batches."""
 
     def __init__(self, tokens: torch.Tensor, sequence_length: int):
-        """Store a token sequence and validate it is long enough to sample from."""
+        """Store a token sequence and validate it is long enough to sample from.
+
+        Args:
+            tokens: One-dimensional tensor of token ids.
+            sequence_length: Context window length to sample.
+        """
 
         if tokens.numel() <= sequence_length:
             raise ValueError("Dataset is too small for the configured sequence length.")
@@ -75,7 +112,15 @@ class LanguageModelingDataset:
         self.sequence_length = sequence_length
 
     def sample_batch(self, batch_size: int, device: torch.device) -> tuple[torch.Tensor, torch.Tensor]:
-        """Sample random contiguous input-target windows for next-token prediction."""
+        """Sample random contiguous input-target windows for next-token prediction.
+
+        Args:
+            batch_size: Number of windows to sample.
+            device: Target device for the returned tensors.
+
+        Returns:
+            tuple[torch.Tensor, torch.Tensor]: Input and target token batches.
+        """
 
         max_index = self.tokens.size(0) - self.sequence_length - 1
         starts = torch.randint(0, max_index, (batch_size,))
@@ -91,7 +136,14 @@ class LanguageModelingDataset:
 
 
 def _load_text(config: DataConfig) -> str:
-    """Load raw training text from synthetic examples or a configured file."""
+    """Load raw training text from synthetic examples or a configured file.
+
+    Args:
+        config: Data settings describing the text source.
+
+    Returns:
+        str: Raw training corpus text.
+    """
 
     if config.dataset_type == "synthetic":
         return synthetic_corpus(config.synthetic_repeats)
@@ -101,7 +153,14 @@ def _load_text(config: DataConfig) -> str:
 
 
 def build_datasets(config: DataConfig) -> DatasetBundle:
-    """Create tokenized train and validation tensors from the configured corpus."""
+    """Create tokenized train and validation tensors from the configured corpus.
+
+    Args:
+        config: Data settings describing corpus loading and split behavior.
+
+    Returns:
+        DatasetBundle: Tokenizer and split token tensors ready for training.
+    """
 
     text = _load_text(config)
     tokenizer = CharacterTokenizer.build(text)

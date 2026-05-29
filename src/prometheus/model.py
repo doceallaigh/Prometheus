@@ -13,7 +13,13 @@ class CausalSelfAttention(nn.Module):
     """Masked multi-head self-attention for causal language modeling."""
 
     def __init__(self, embedding_dim: int, num_heads: int, dropout: float):
-        """Initialize the projection layers and attention head geometry."""
+        """Initialize the projection layers and attention head geometry.
+
+        Args:
+            embedding_dim: Width of the model hidden state.
+            num_heads: Number of attention heads.
+            dropout: Dropout probability applied inside attention.
+        """
 
         super().__init__()
         if embedding_dim % num_heads != 0:
@@ -25,7 +31,14 @@ class CausalSelfAttention(nn.Module):
         self.dropout = dropout
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Apply causal self-attention to a batch of token embeddings."""
+        """Apply causal self-attention to a batch of token embeddings.
+
+        Args:
+            x: Input tensor shaped ``(batch, sequence, embedding_dim)``.
+
+        Returns:
+            torch.Tensor: Attention-updated hidden states.
+        """
 
         batch_size, sequence_length, embedding_dim = x.shape
         qkv = self.qkv(x)
@@ -46,7 +59,15 @@ class CausalSelfAttention(nn.Module):
 
 
 def _valid_head_count(embedding_dim: int, preferred_heads: int) -> int:
-    """Choose the largest head count up to the preference that divides the width."""
+    """Choose the largest head count up to the preference that divides the width.
+
+    Args:
+        embedding_dim: Width of the tensor that will be split into heads.
+        preferred_heads: Desired head count before divisibility adjustment.
+
+    Returns:
+        int: Valid head count that evenly divides the embedding dimension.
+    """
 
     candidate = min(preferred_heads, embedding_dim)
     while candidate > 1:
@@ -60,7 +81,13 @@ class FeedForward(nn.Module):
     """Transformer MLP block with GELU activation and dropout."""
 
     def __init__(self, embedding_dim: int, mlp_ratio: int, dropout: float):
-        """Create the two-layer feedforward network for one transformer block."""
+        """Create the two-layer feedforward network for one transformer block.
+
+        Args:
+            embedding_dim: Width of the input and output activations.
+            mlp_ratio: Expansion factor used for the hidden layer.
+            dropout: Dropout probability after the projection back to model width.
+        """
 
         super().__init__()
         hidden_dim = embedding_dim * mlp_ratio
@@ -72,7 +99,14 @@ class FeedForward(nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Transform token embeddings through the block MLP."""
+        """Transform token embeddings through the block MLP.
+
+        Args:
+            x: Input tensor of token embeddings.
+
+        Returns:
+            torch.Tensor: Feedforward-transformed embeddings.
+        """
 
         return self.net(x)
 
@@ -81,7 +115,14 @@ class TransformerBlock(nn.Module):
     """Pre-norm transformer block with attention and feedforward residual paths."""
 
     def __init__(self, embedding_dim: int, num_heads: int, mlp_ratio: int, dropout: float):
-        """Build the normalization, attention, and feedforward submodules."""
+        """Build the normalization, attention, and feedforward submodules.
+
+        Args:
+            embedding_dim: Width of the block hidden state.
+            num_heads: Number of attention heads.
+            mlp_ratio: Expansion factor for the feedforward hidden width.
+            dropout: Dropout probability used inside the block.
+        """
 
         super().__init__()
         self.attention_norm = nn.LayerNorm(embedding_dim)
@@ -90,7 +131,14 @@ class TransformerBlock(nn.Module):
         self.feedforward = FeedForward(embedding_dim, mlp_ratio, dropout)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Apply attention and feedforward updates with residual connections."""
+        """Apply attention and feedforward updates with residual connections.
+
+        Args:
+            x: Input tensor of hidden states.
+
+        Returns:
+            torch.Tensor: Updated hidden states after the residual block.
+        """
 
         x = x + self.attention(self.attention_norm(x))
         x = x + self.feedforward(self.feedforward_norm(x))
@@ -109,7 +157,12 @@ class LanguageModelBase(nn.Module):
     """Shared embedding and output-head utilities for Prometheus language models."""
 
     def __init__(self, config: ModelConfig, sequence_length: int):
-        """Initialize token embeddings, positions, normalization, and LM head."""
+        """Initialize token embeddings, positions, normalization, and LM head.
+
+        Args:
+            config: Resolved model hyperparameters.
+            sequence_length: Maximum supported context length.
+        """
 
         super().__init__()
         if not isinstance(config.vocab_size, int):
@@ -123,7 +176,11 @@ class LanguageModelBase(nn.Module):
         self.lm_head = nn.Linear(config.embedding_dim, config.vocab_size, bias=False)
 
     def _initialize_weights(self) -> None:
-        """Initialize linear and embedding weights with small normal noise."""
+        """Initialize linear and embedding weights with small normal noise.
+
+        Returns:
+            None: Parameters are initialized in place.
+        """
 
         for module in self.modules():
             if isinstance(module, (nn.Linear, nn.Embedding)):
@@ -132,7 +189,14 @@ class LanguageModelBase(nn.Module):
                     nn.init.zeros_(module.bias)
 
     def _embed(self, tokens: torch.Tensor) -> torch.Tensor:
-        """Embed token ids and add learned positional embeddings."""
+        """Embed token ids and add learned positional embeddings.
+
+        Args:
+            tokens: Token ids shaped ``(batch, sequence)``.
+
+        Returns:
+            torch.Tensor: Embedded token representations with positions added.
+        """
 
         _, sequence_length = tokens.shape
         if sequence_length > self.sequence_length:
@@ -142,7 +206,15 @@ class LanguageModelBase(nn.Module):
         return self.dropout(x)
 
     def _finalize(self, x: torch.Tensor, targets: torch.Tensor | None = None) -> ForwardOutput:
-        """Project hidden states to logits and optionally compute cross-entropy loss."""
+        """Project hidden states to logits and optionally compute cross-entropy loss.
+
+        Args:
+            x: Hidden states produced by the model body.
+            targets: Optional next-token targets for loss computation.
+
+        Returns:
+            ForwardOutput: Logits and optional cross-entropy loss.
+        """
 
         logits = self.lm_head(self.norm(x))
         loss = None
@@ -155,7 +227,12 @@ class DenseTransformerLM(LanguageModelBase):
     """Standard dense transformer baseline used as the experiment control."""
 
     def __init__(self, config: ModelConfig, sequence_length: int):
-        """Construct the configured stack of dense transformer blocks."""
+        """Construct the configured stack of dense transformer blocks.
+
+        Args:
+            config: Resolved model hyperparameters.
+            sequence_length: Maximum supported context length.
+        """
 
         super().__init__(config, sequence_length)
         self.blocks = nn.ModuleList(
@@ -173,7 +250,15 @@ class DenseTransformerLM(LanguageModelBase):
         self.lm_head.weight = self.token_embeddings.weight
 
     def forward(self, tokens: torch.Tensor, targets: torch.Tensor | None = None) -> ForwardOutput:
-        """Run dense transformer blocks over token inputs and return model outputs."""
+        """Run dense transformer blocks over token inputs and return model outputs.
+
+        Args:
+            tokens: Input token ids.
+            targets: Optional next-token targets for loss computation.
+
+        Returns:
+            ForwardOutput: Dense-model logits and optional loss.
+        """
 
         x = self._embed(tokens)
         for block in self.blocks:
@@ -185,7 +270,13 @@ class StaticRouter(nn.Module):
     """Fixed routing layer that mixes module summaries under a topology mask."""
 
     def __init__(self, num_groups: int, topology: str, top_k: int | None):
-        """Create routing logits and the allowed communication mask."""
+        """Create routing logits and the allowed communication mask.
+
+        Args:
+            num_groups: Number of groups participating in routing.
+            topology: Name of the allowed communication pattern.
+            top_k: Optional number of inbound routes to keep per group.
+        """
 
         super().__init__()
         self.num_groups = num_groups
@@ -196,7 +287,15 @@ class StaticRouter(nn.Module):
 
     @staticmethod
     def _build_mask(num_groups: int, topology: str) -> torch.Tensor:
-        """Build the boolean adjacency mask implied by the selected topology."""
+        """Build the boolean adjacency mask implied by the selected topology.
+
+        Args:
+            num_groups: Number of groups participating in routing.
+            topology: Name of the allowed communication pattern.
+
+        Returns:
+            torch.Tensor: Boolean adjacency mask over source and destination groups.
+        """
 
         mask = torch.zeros(num_groups, num_groups, dtype=torch.bool)
         for destination in range(num_groups):
@@ -215,7 +314,14 @@ class StaticRouter(nn.Module):
         return mask
 
     def forward(self, summaries: torch.Tensor) -> torch.Tensor:
-        """Mix group summaries according to learned weights constrained by the mask."""
+        """Mix group summaries according to learned weights constrained by the mask.
+
+        Args:
+            summaries: Group summary tensor shaped ``(batch, groups, channels)``.
+
+        Returns:
+            torch.Tensor: Routed summaries with the same shape as the input.
+        """
 
         scores = self.routing_logits.masked_fill(~self.routing_mask, float("-inf"))
         if self.top_k is not None and self.top_k < self.num_groups:
@@ -232,7 +338,18 @@ class ModularStage(nn.Module):
     """One modular processing stage with local blocks and routed group summaries."""
 
     def __init__(self, embedding_dim: int, num_heads: int, mlp_ratio: int, dropout: float, group_count: int, depth: int, topology: str, top_k: int | None):
-        """Partition channels into groups, attach local blocks, and configure routing."""
+        """Partition channels into groups, attach local blocks, and configure routing.
+
+        Args:
+            embedding_dim: Width of the incoming hidden state.
+            num_heads: Preferred attention head count for local blocks.
+            mlp_ratio: Expansion factor for local feedforward layers.
+            dropout: Dropout probability used inside local blocks.
+            group_count: Number of channel groups in the stage.
+            depth: Number of local transformer blocks per group.
+            topology: Routing topology used between group summaries.
+            top_k: Optional number of routes to keep per destination group.
+        """
 
         super().__init__()
         if embedding_dim % group_count != 0:
@@ -261,7 +378,14 @@ class ModularStage(nn.Module):
         self.router_norm = nn.LayerNorm(group_dim)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Run grouped local computation, summarize groups, and route updates."""
+        """Run grouped local computation, summarize groups, and route updates.
+
+        Args:
+            x: Hidden states entering the modular stage.
+
+        Returns:
+            torch.Tensor: Hidden states after local processing and routed mixing.
+        """
 
         batch_size, sequence_length, embedding_dim = x.shape
         grouped = x.view(batch_size, sequence_length, self.group_count, self.group_dim)
@@ -282,7 +406,12 @@ class ModularTransformerLM(LanguageModelBase):
     """Hierarchical modular transformer variant with fixed inter-group routing."""
 
     def __init__(self, config: ModelConfig, sequence_length: int):
-        """Construct the configured sequence of modular processing stages."""
+        """Construct the configured sequence of modular processing stages.
+
+        Args:
+            config: Resolved model hyperparameters.
+            sequence_length: Maximum supported context length.
+        """
 
         super().__init__(config, sequence_length)
         group_schedule = config.stage_groups or [2, 1]
@@ -308,7 +437,15 @@ class ModularTransformerLM(LanguageModelBase):
         self.lm_head.weight = self.token_embeddings.weight
 
     def forward(self, tokens: torch.Tensor, targets: torch.Tensor | None = None) -> ForwardOutput:
-        """Run modular stages over token inputs and return model outputs."""
+        """Run modular stages over token inputs and return model outputs.
+
+        Args:
+            tokens: Input token ids.
+            targets: Optional next-token targets for loss computation.
+
+        Returns:
+            ForwardOutput: Modular-model logits and optional loss.
+        """
 
         x = self._embed(tokens)
         for stage in self.stages:
@@ -317,7 +454,15 @@ class ModularTransformerLM(LanguageModelBase):
 
 
 def build_model(config: ModelConfig, sequence_length: int) -> LanguageModelBase:
-    """Instantiate the requested dense or modular language-model variant."""
+    """Instantiate the requested dense or modular language-model variant.
+
+    Args:
+        config: Resolved model hyperparameters.
+        sequence_length: Maximum supported context length.
+
+    Returns:
+        LanguageModelBase: Instantiated dense or modular model.
+    """
 
     if config.architecture == "dense":
         return DenseTransformerLM(config, sequence_length)
