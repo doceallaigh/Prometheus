@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+outputs/
+checkpoints/
+*.egg-info/
+papers/*.aux
+papers/*.log
+papers/*.out
+papers/*.synctex.gz
+papers/*.fls
+papers/*.fdb_latexmk

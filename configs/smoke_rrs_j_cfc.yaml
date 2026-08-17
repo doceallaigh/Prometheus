@@ -1,0 +1,40 @@
+experiment:
+  run_name: smoke-rrs-j-cfc
+  seed: 1337
+  device: cpu
+  output_dir: outputs
+
+data:
+  dataset_type: reasoning_chain
+  sequence_length: 64
+  batch_size: 16
+  train_split: 0.95
+  chain_length_min: 2
+  chain_length_max: 4
+  num_problems: 500
+  reasoning_seed: 1234
+  reasoning_format: mixed
+
+model:
+  vocab_size: auto
+  embedding_dim: 64
+  num_heads: 4
+  num_layers: 4
+  dropout: 0.1
+  architecture: rrs_j_cfc
+  base_checkpoint: outputs/smoke-rrs-base-20260710-035330/checkpoint.pt
+  jspace_layer_index: 3
+  cfc_dim: 32
+  cfc_max_steps: 48
+
+training:
+  max_steps: 20
+  eval_interval: 10
+  log_interval: 5
+  learning_rate: 0.001
+  weight_decay: 0.01
+  grad_clip: 1.0
+  warmup_steps: 0
+
+evaluation:
+  max_batches: 2
